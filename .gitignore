@@ -11,3 +11,7 @@ check_output/
 *~
 *.txt
 *.dat
+
+# subMIT batch outputs
+logs/
+tarballs/

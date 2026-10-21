@@ -1,0 +1,42 @@
+# HTCondor submit description -- 20-file test replay, 2026-09-22.
+#
+# Pinned to an archived lad_replay snapshot rather than tarballs/lad_replay.tar.gz,
+# so this test keeps running against exactly that version no matter what
+# make_tar_submit.sh does afterwards. run_lad_replay_submit.sh reads $TARBALL
+# and accepts either tarball layout ("lad_replay/..." or "./...").
+#
+# Run list: run-lists/test20_2026Sept22.dat -- 19 jobs, 20 raw .dat files,
+# ~149 GB. Every job is a complete run (all segments), including run 23041
+# whose two segments are the large 18.6 GB + 9.6 GB files.
+#
+# Submit with:
+#   condor_submit replay_submit_test20.sub
+
+runlist        = run-lists/test20_2026Sept22.dat
+replay_script  = SCRIPTS/LAD_COIN/PRODUCTION/replay_production_lad_spec.C
+events         = -1
+
+tarball        = /work/submit/ehingerl/hallc/software/lad_replay_versions/lad_replay_2026_Sept22.tar.gz
+environment    = "TARBALL=$(tarball)"
+
+executable     = run_lad_replay_submit.sh
+arguments      = $(replay_script) $(run) $(events) $(config_num) $(seg_end) $(seg_start)
+
+# Raw data and output both live on shared filesystems (/ceph/submit), reached
+# through the raw/ and ROOTfiles/ symlinks inside the tarball, so nothing is
+# staged in or out by Condor itself.
+should_transfer_files = NO
+
+output         = logs/test20_2026Sept22/$(run)_$(seg_start)-$(seg_end).out
+error          = logs/test20_2026Sept22/$(run)_$(seg_start)-$(seg_end).err
+log            = logs/test20_2026Sept22/$(run)_$(seg_start)-$(seg_end).log
+
+requirements   = (OpSysMajorVer == 9)
+
+request_cpus   = 1
+request_memory = 6GB
+request_disk   = 20GB
+
++MaxRuntime    = 86400
+
+queue run,seg_end,seg_start,config_num,zero from $(runlist)
